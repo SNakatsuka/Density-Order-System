@@ -1,0 +1,32 @@
+body {
+    font-family: sans-serif;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    margin: 20px auto;
+    min-height: 100px;
+    width: 80%;
+    background-color: #f0f0f0;
+    border: 2px dashed #ccc;
+}
+
+.item {
+    padding: 20px 30px;
+    margin: 0 10px;
+    background-color: #fff;
+    border: 1px solid #999;
+    border-radius: 8px;
+    cursor: grab;
+    user-select: none; /* テキスト選択を防ぐ */
+}
+
+/* ドラッグ中のスタイル */
+.item.dragging {
+    opacity: 0.5;
+    background: #cde;
+}
