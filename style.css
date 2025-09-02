@@ -30,3 +30,17 @@ body {
     opacity: 0.5;
     background: #cde;
 }
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+#next-button {
+    background-color: #28a745; /* 緑色 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
