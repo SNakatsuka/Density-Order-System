@@ -29,19 +29,41 @@ const levels = [
             { name: '鉛', density: 11.34 },
             { name: '金', density: 19.3 },
         ]
+    },
+    {
+        name: 'ステージ4：気体と液体（仮想）',
+        materials: [
+            { name: 'ヘリウム', density: 0.000178 }, { name: '空気', density: 0.001293 },
+            { name: 'ガソリン', density: 0.75 }, { name: 'オリーブ油', density: 0.92 },
+            { name: '牛乳', density: 1.03 },
+        ]
+    },
+    {
+        name: '最終ステージ：総力戦！',
+        materials: [
+            { name: 'リチウム', density: 0.53 }, { name: '氷', density: 0.917 },
+            { name: 'ポリ塩化ビニル(PVC)', density: 1.4 }, { name: 'ハチミツ', density: 1.42 },
+            { name: 'コンクリート', density: 2.4 }, { name: '水銀', density: 13.55 },
+            { name: '白金', density: 21.45 },
+        ]
     }
 ];
 
+
 // HTML要素の取得
 const levelTitle = document.getElementById('level-title');
+const mistakeCounter = document.getElementById('mistake-counter');
 const itemPool = document.getElementById('item-pool');
 const dropZone = document.getElementById('drop-zone');
 const checkButton = document.getElementById('check-button');
 const nextButton = document.getElementById('next-button');
+const restartButton = document.getElementById('restart-button');
 const result = document.getElementById('result');
 
 // 2. 現在のステージを管理する変数
 let currentLevel = 0;
+let mistakeCount = 0;
+const MAX_MISTAKES = 3;
 let draggedItem = null;
 
 // 3. ステージを読み込む関数
@@ -52,6 +74,9 @@ function loadLevel(levelIndex) {
     result.textContent = '';
     checkButton.style.display = 'inline-block';
     nextButton.style.display = 'none';
+    restartButton.style.display = 'none';
+    
+    updateMistakeDisplay();
 
     const level = levels[levelIndex];
     levelTitle.textContent = level.name;
@@ -117,6 +142,10 @@ function getDragAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
+// ミス回数表示を更新する関数
+function updateMistakeDisplay() {
+    mistakeCounter.textContent = `のこりチャンス: ${MAX_MISTAKES - mistakeCount}回`;
+}
 
 // 4. 「答え合わせ」のロジックを更新
 checkButton.addEventListener('click', () => {
@@ -152,8 +181,22 @@ checkButton.addEventListener('click', () => {
             result.style.color = 'gold';
         }
     } else {
-        result.textContent = "残念、不正解です。もう一度挑戦！";
-        result.style.color = 'red';
+        mistakeCount++;
+        updateMistakeDisplay();
+        
+        if (mistakeCount >= MAX_MISTAKES) {
+            // 3. ゲームオーバー処理
+            result.textContent = "ゲームオーバー...。はじめから再挑戦！";
+            result.style.color = 'darkred';
+            checkButton.style.display = 'none';
+            restartButton.style.display = 'inline-block';
+            // ゲーム状態をリセット
+            currentLevel = 0;
+            mistakeCount = 0;
+        } else {
+            result.textContent = "残念、不正解です。もう一度挑戦！";
+            result.style.color = 'red';
+        }
     }
 });
 
@@ -161,6 +204,11 @@ checkButton.addEventListener('click', () => {
 nextButton.addEventListener('click', () => {
     currentLevel++;
     loadLevel(currentLevel);
+});
+
+//「はじめから挑戦」ボタンの処理
+restartButton.addEventListener('click', () => {
+    loadLevel(currentLevel); // リセットされた状態でステージ0を読み込む
 });
 
 // 5. ゲームの開始
