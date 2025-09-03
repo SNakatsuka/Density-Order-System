@@ -1,56 +1,4 @@
-// 1. ステージごとのデータを用意する
-const levels = [
-    {
-        name: 'ステージ1：基本編',
-        materials: [
-            { name: '木（杉）', density: 0.4 },
-            { name: '水', density: 1.0 },
-            { name: 'アルミニウム', density: 2.7 },
-            { name: '鉄', density: 7.87 },
-        ]
-    },
-    {
-        name: 'ステージ2：プラスチックと液体',
-        materials: [
-            { name: '発泡スチロール', density: 0.02 },
-            { name: 'エタノール', density: 0.789 },
-            { name: 'アクリル樹脂', density: 1.19 },
-            { name: 'ガラス', density: 2.5 },
-            { name: '海水', density: 1.025 },
-        ]
-    },
-    {
-        name: 'ステージ3：金属いろいろ',
-        materials: [
-            { name: 'マグネシウム', density: 1.74 },
-            { name: 'チタン', density: 4.51 },
-            { name: '銅', density: 8.96 },
-            { name: '銀', density: 10.49 },
-            { name: '鉛', density: 11.34 },
-            { name: '金', density: 19.3 },
-        ]
-    },
-    {
-        name: 'ステージ4：気体と液体（仮想）',
-        materials: [
-            { name: 'ヘリウム', density: 0.000178 }, { name: '空気', density: 0.001293 },
-            { name: 'ガソリン', density: 0.75 }, { name: 'オリーブ油', density: 0.92 },
-            { name: '牛乳', density: 1.03 },
-        ]
-    },
-    {
-        name: '最終ステージ：総力戦！',
-        materials: [
-            { name: 'リチウム', density: 0.53 }, { name: '氷', density: 0.917 },
-            { name: 'ポリ塩化ビニル(PVC)', density: 1.4 }, { name: 'ハチミツ', density: 1.42 },
-            { name: 'コンクリート', density: 2.4 }, { name: '水銀', density: 13.55 },
-            { name: '白金', density: 21.45 },
-        ]
-    }
-];
-
-
-// HTML要素の取得
+// 1. HTML要素の取得
 const levelTitle = document.getElementById('level-title');
 const mistakeCounter = document.getElementById('mistake-counter');
 const itemPool = document.getElementById('item-pool');
@@ -61,14 +9,48 @@ const restartButton = document.getElementById('restart-button');
 const result = document.getElementById('result');
 
 // 2. 現在のステージを管理する変数
-let currentLevel = 0;
+let currentLevel = 1; // ステージは1から始める
 let mistakeCount = 0;
 const MAX_MISTAKES = 3;
+let currentMaterials = []; // 現在のステージの物質リスト
 let draggedItem = null;
 
-// 3. ステージを読み込む関数
-function loadLevel(levelIndex) {
-    // 前のステージのカードをクリア
+// 3. ステージを自動生成する関数 
+function generateLevel(level) {
+    // 1. 問題数を決定
+    let numItems;
+    if (level <= 10) numItems = 4;
+    else if (level <= 30) numItems = 5;
+    else if (level <= 100) numItems = 6;
+    else numItems = 7;
+
+    // 2. 難易度範囲を決定
+    const difficultyRange = Math.min(1 + Math.floor(level / 5), 8); // レベルが5上がるごとに難易度上限が1上がる
+    
+    // 3. データベースから候補をフィルタリング
+    const candidates = masterDatabase.filter(item => item.difficulty <= difficultyRange);
+    
+    // 4. 候補からランダムに問題を選択
+    //    （密度の差が近すぎないように少し調整）
+    let selected = [];
+    while (selected.length < numItems && candidates.length > 0) {
+        const randomIndex = Math.floor(Math.random() * candidates.length);
+        const candidate = candidates.splice(randomIndex, 1)[0]; // 候補から取り除く
+        
+        // 難易度調整：高レベルでは密度の近いものを許容
+        const isTooClose = selected.some(item => Math.abs(item.density - candidate.density) < (0.5 / (level/10 + 1)) );
+
+        if (selected.length === 0 || !isTooClose) {
+            selected.push(candidate);
+        }
+    }
+    
+    return selected;
+}
+
+
+function loadStage() {
+    // 前のステージの情報をクリア
     itemPool.innerHTML = '';
     dropZone.innerHTML = '';
     result.textContent = '';
@@ -78,11 +60,13 @@ function loadLevel(levelIndex) {
     
     updateMistakeDisplay();
 
-    const level = levels[levelIndex];
-    levelTitle.textContent = level.name;
-
-    // 問題をシャッフルしてカードを生成
-    level.materials
+    // ★ ステージを自動生成！
+    currentMaterials = generateLevel(currentLevel);
+    
+    levelTitle.textContent = `ステージ ${currentLevel}`;
+    
+    // 生成された問題でカードを作成
+    currentMaterials
         .sort(() => Math.random() - 0.5)
         .forEach(material => {
             const item = document.createElement('div');
@@ -90,10 +74,10 @@ function loadLevel(levelIndex) {
             item.className = 'item';
             item.draggable = true;
             item.dataset.density = material.density;
+            item.title = material.description; // ヒントとして豆知識をツールチップに表示
             itemPool.appendChild(item);
         });
 
-    // ドラッグ＆ドロップのイベントリスナーを再設定
     addDragAndDropHandlers();
 }
 
@@ -173,19 +157,23 @@ checkButton.addEventListener('click', () => {
         result.style.color = 'green';
         checkButton.style.display = 'none'; // 答え合わせボタンを隠す
 
-        // 次のステージがあるか確認
-        if (currentLevel < levels.length - 1) {
-            nextButton.style.display = 'inline-block'; // 次のステージへボタンを表示
+        // 正解時に豆知識を表示
+        const descriptions = [...dropZone.querySelectorAll('.item')]
+            .map(item => `${item.textContent}: ${item.title}`)
+            .join('\n');
+        // alert(descriptions); // ポップアップで解説など
+
+        if (currentLevel < 1000) { // 目標ステージ数
+            nextButton.style.display = 'inline-block';
         } else {
-            result.textContent = "全ステージクリア！おめでとうございます！";
-            result.style.color = 'gold';
+            result.textContent = "🎉 1000ステージクリア！あなたは真の密度マスターです！ 🎉";
         }
     } else {
         mistakeCount++;
         updateMistakeDisplay();
         
         if (mistakeCount >= MAX_MISTAKES) {
-            // 3. ゲームオーバー処理
+            // ゲームオーバー処理
             result.textContent = "ゲームオーバー...。はじめから再挑戦！";
             result.style.color = 'darkred';
             checkButton.style.display = 'none';
@@ -203,12 +191,13 @@ checkButton.addEventListener('click', () => {
 // 「次のステージへ」ボタンの処理
 nextButton.addEventListener('click', () => {
     currentLevel++;
-    loadLevel(currentLevel);
+    loadStage();
 });
 
 //「はじめから挑戦」ボタンの処理
 restartButton.addEventListener('click', () => {
-    loadLevel(currentLevel); // リセットされた状態でステージ0を読み込む
+    currentLevel = 1; // ステージ1に戻す
+    loadStage();
 });
 
 // 5. ゲームの開始
