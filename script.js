@@ -126,7 +126,6 @@ let currentLevel = 1; // ステージは1から始める
 let mistakeCount = 0;
 const MAX_MISTAKES = 3;
 let currentMaterials = []; // 現在のステージの物質リスト
-let draggedItem = null;
 
 // 3. ステージを自動生成する関数 
 function generateLevel(level) {
@@ -246,7 +245,6 @@ function updateMistakeDisplay() {
 
 // 4. 「答え合わせ」のロジックを更新
 checkButton.addEventListener('click', () => {
-    const currentMaterials = levels[currentLevel].materials;
     const sortedItems = [...dropZone.querySelectorAll('.item')];
 
     if (sortedItems.length < currentMaterials.length) {
@@ -292,7 +290,7 @@ checkButton.addEventListener('click', () => {
             checkButton.style.display = 'none';
             restartButton.style.display = 'inline-block';
             // ゲーム状態をリセット
-            currentLevel = 0;
+            currentLevel = 1; // 修正
             mistakeCount = 0;
         } else {
             result.textContent = "残念、不正解です。もう一度挑戦！";
@@ -314,4 +312,4 @@ restartButton.addEventListener('click', () => {
 });
 
 // 5. ゲームの開始
-loadLevel(currentLevel);
+loadStage(currentLevel); // 修正
