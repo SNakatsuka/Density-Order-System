@@ -2,12 +2,17 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>密度並べ替えゲーム（ステージ制）</title>
+    <title>密度並べ替えゲーム</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>密度並べ替えゲーム</h1>
-    <h2 id="level-title"></h2>
+    <div class="header">
+        <h1>密度並べ替えゲーム</h1>
+        <div id="status-display">
+            <h2 id="level-title"></h2>
+            <p id="mistake-counter"></p>
+        </div>
+    </div>
     <p>物質を密度が小さい（軽い）順に左から並べてください。</p>
 
     <div id="item-pool" class="container">
@@ -16,8 +21,11 @@
     <div id="drop-zone" class="container">
         </div>
 
-    <button id="check-button">答え合わせ</button>
-    <button id="next-button" style="display: none;">次のステージへ</button>
+    <div class="buttons">
+        <button id="check-button">答え合わせ</button>
+        <button id="next-button" style="display: none;">次のステージへ</button>
+        <button id="restart-button" style="display: none;">はじめから挑戦</button>
+    </div>
     <p id="result"></p>
 
     <script src="script.js"></script>
